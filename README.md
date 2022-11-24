@@ -1,2 +1,2 @@
-# algoritmos_visualizador
+# Algoritmos Visualizador
 Sebastian Andre Ochoa Ortiz
