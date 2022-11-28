@@ -66,62 +66,53 @@ public:
     }
     void RI(Nodo<T> *&p)
     {
-        Nodo<T> *q = m_pRoot;
-        if (p->m_pDad)
-        {
-            if (p->m_pDad->m_pSon[1] == p)
-            {
-                q = p->m_pDad->m_pSon[1];
-            }
-            else if (p->m_pDad->m_pSon[0] == p)
-            {
-                q = p->m_pDad->m_pSon[0];
-            }
-        }
-        q = p->m_pSon[1];
-        q->m_pDad = p->m_pDad;
-        p->m_pDad = q;
+        Nodo<T> *q = p->m_pSon[1];
         p->m_pSon[1] = q->m_pSon[0];
+        if (q->m_pSon[0] != NULL)
+        {
+            q->m_pSon[0]->m_pDad = p;
+        }
+        q->m_pDad = p->m_pDad;
+        if (p->m_pDad == nullptr)
+        {
+            m_pRoot = q;
+        }
+        else if (p == p->m_pDad->m_pSon[0])
+        {
+            p->m_pDad->m_pSon[0] = q;
+        }
+        else
+        {
+            p->m_pDad->m_pSon[1] = q;
+        }
         q->m_pSon[0] = p;
-        Nodo<T> *r = q->m_pDad;
-        if (r)
-        {
-            r->m_pSon[0] = q;
-        }
-        if (p->m_pSon[1])
-        {
-            p->m_pSon[1]->m_pDad = p;
-        }
+        p->m_pDad = q;
     }
     void RD(Nodo<T> *&p)
     {
-        Nodo<T> *q = m_pRoot;
-        if (p->m_pDad)
-        {
-            if (p->m_pDad->m_pSon[1] == p)
-            {
-                q = p->m_pDad->m_pSon[1];
-            }
-            else if (p->m_pDad->m_pSon[0] == p)
-            {
-                q = p->m_pDad->m_pSon[0];
-            }
-        }
-        q = p->m_pSon[0];
-        q->m_pDad = p->m_pDad;
-        p->m_pDad = q;
+        Nodo<T> *q = p->m_pSon[0];
         p->m_pSon[0] = q->m_pSon[1];
+        if (q->m_pSon[1] != NULL)
+        {
+            q->m_pSon[1]->m_pDad = p;
+        }
+        q->m_pDad = p->m_pDad;
+        if (p->m_pDad == nullptr)
+        {
+            m_pRoot = p;
+        }
+        else if (p == p->m_pDad->m_pSon[1])
+        {
+            p->m_pDad->m_pSon[1] = q;
+        }
+        else
+        {
+            p->m_pDad->m_pSon[0] = q;
+        }
         q->m_pSon[1] = p;
-        Nodo<T> *r = q->m_pDad;
-        if (r)
-        {
-            r->m_pSon[1] = q;
-        }
-        if (p->m_pSon[0])
-        {
-            p->m_pSon[0]->m_pDad = p;
-        }
+        p->m_pDad = q;
     }
+
     void Caso01(Nodo<T> *&p)
     {
         if (p->m_pDad == 0)
@@ -163,14 +154,15 @@ public:
     void Caso04(Nodo<T> *&p)
     {
         Nodo<T> *q = Abuelo(p);
+        Nodo<T> *r = p->m_pDad;
         if ((p == p->m_pDad->m_pSon[1]) && (p->m_pDad == q->m_pSon[0]))
         {
-            RI(p->m_pDad);
+            RI(r);
             p = p->m_pSon[0];
         }
         else if ((p == p->m_pDad->m_pSon[0]) && (p->m_pDad == q->m_pSon[1]))
         {
-            RD(p->m_pDad);
+            RD(r);
             p = p->m_pSon[1];
         }
         Caso05(p);
@@ -199,6 +191,7 @@ public:
     }
     void Add(T d)
     {
+
         if (!m_pRoot)
         {
             m_pRoot = new Nodo<T>(d);
@@ -289,7 +282,7 @@ void Menu()
 int main()
 {
     Tree<int> A;
-    int opc;
+    /* int opc;
     bool valid = true;
     do
     {
@@ -317,5 +310,20 @@ int main()
         default:
             break;
         }
-    } while (valid == true);
+    } while (valid == true); */
+    A.Add(70);
+    A.Add(80);
+    A.Add(100);
+     A.Add(120);
+    A.Add(170);
+    A.Add(180);
+    A.Add(115);
+    A.Add(90);
+     A.Add(95);
+     A.Add(200);
+    A.Add(300);
+    A.Add(400);   
+    A.Visualizer();
+    system("dot TreeRB.dot -o TreeRB.png -Tpng");
+    system("C:\\Users\\Sebas-PC\\Desktop\\Clases_2022-II\\Algoritmos-y-Estructuras-de-Datos\\Visualizer\\ArbolRedBlack\\TreeRB.png");
 }
