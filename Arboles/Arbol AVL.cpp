@@ -4,24 +4,27 @@
 template <class T>
 class Nodo
 {
+
 public:
     T m_Dato;
-    int m_Factor;
     Nodo<T> *m_pSon[2];
-    Nodo<T> *m_pDad;
+    int m_Height;
+    int m_Factor;
 
 public:
     Nodo(T d)
     {
         m_Dato = d;
-        m_pSon[0] = m_pSon[1] = nullptr;
+        m_pSon[0] = m_pSon[1] = 0;
+        m_Height = 0;
         m_Factor = 0;
-        m_pDad = nullptr;
     }
 };
+
 template <class T>
 class Tree
 {
+
 private:
     Nodo<T> *m_pRoot;
 
@@ -31,159 +34,182 @@ public:
         m_pRoot = nullptr;
     }
 
-    void updateBalance(Nodo<T> *&p)
-    {
-        if (p->m_Factor < -1 || p->m_Factor > 1)
-        {
-            rebalance(p);
-            return;
-        }
-        if (p->m_pDad != nullptr)
-        {
-            if (p == p->m_pDad->m_pSon[0])
-            {
-                p->m_pDad->m_Factor -= 1;
-            }
-            if (p == p->m_pDad->m_pSon[1])
-            {
-                p->m_pDad->m_Factor += 1;
-            }
-            if (p->m_pDad->m_Factor != 0)
-            {
-                Nodo<T> *r = p->m_pDad;
-                updateBalance(r);
-            }
-        }
-    }
-
-    void rebalance(Nodo<T> *&p)
-    {
-        Nodo<T> *r;
-        if (p->m_Factor > 0)
-        {
-            if (p->m_pSon[1]->m_Factor < 0)
-            {
-                r = p->m_pSon[1];
-                rightRotate(r);
-                leftRotate(p);
-            }
-            else
-            {
-                leftRotate(p);
-            }
-        }
-        else if (p->m_Factor < 0)
-        {
-            if (p->m_pSon[0]->m_Factor > 0)
-            {
-                r = p->m_pSon[0];
-                leftRotate(r);
-                rightRotate(p);
-            }
-            else
-            {
-                rightRotate(p);
-            }
-        }
-    }
-
-    void leftRotate(Nodo<T> *&p)
+    void RDD(Nodo<T> *&p)
     {
         Nodo<T> *q = p->m_pSon[1];
         p->m_pSon[1] = q->m_pSon[0];
-
-        if (q->m_pSon[0] != nullptr)
+        q->m_pSon[0] = p;
+        p->m_Factor = 0;
+        q->m_Factor = 0;
+        p = q;
+        if (!q->m_pSon[0]->m_pSon[0] && !q->m_pSon[0]->m_pSon[1])
         {
-            q->m_pSon[0]->m_pDad = p;
-        }
-
-        q->m_pDad = p->m_pDad;
-
-        if (p->m_pDad == nullptr)
-        {
-            m_pRoot = q;
-        }
-        else if (p == p->m_pDad->m_pSon[0])
-        {
-            p->m_pDad->m_pSon[0] = q;
+            q->m_pSon[0]->m_Height = 0;
+            q->m_Height = q->m_pSon[0]->m_Height + 1;
         }
         else
         {
-            p->m_pDad->m_pSon[1] = q;
+            q->m_pSon[0]->m_Height = 1 + std::max(q->m_pSon[0]->m_pSon[0]->m_Height, q->m_pSon[0]->m_pSon[1]->m_Height);
         }
-
-        q->m_pSon[0] = p;
-        p->m_pDad = q;
-        p->m_Factor = p->m_Factor - 1 - std::max(0, q->m_Factor);
-        q->m_Factor = q->m_Factor - 1 + std::min(0, p->m_Factor);
     }
 
-    void rightRotate(Nodo<T> *&p)
+    void RII(Nodo<T> *&p)
     {
         Nodo<T> *q = p->m_pSon[0];
         p->m_pSon[0] = q->m_pSon[1];
-
-        if (q->m_pSon[1] != nullptr)
+        q->m_pSon[1] = p;
+        p->m_Factor = 0;
+        q->m_Factor = 0;
+        p = q;
+        if (!q->m_pSon[1]->m_pSon[0] && !q->m_pSon[1]->m_pSon[1])
         {
-            q->m_pSon[1]->m_pDad = p;
-        }
-
-        q->m_pDad = p->m_pDad;
-
-        if (p->m_pDad == nullptr)
-        {
-            m_pRoot = q;
-        }
-        else if (p == p->m_pDad->m_pSon[1])
-        {
-            p->m_pDad->m_pSon[1] = q;
+            q->m_pSon[1]->m_Height = 0;
+            q->m_Height = q->m_pSon[1]->m_Height + 1;
         }
         else
         {
-            p->m_pDad->m_pSon[0] = q;
+            q->m_pSon[1]->m_Height = 1 + std::max(q->m_pSon[1]->m_pSon[0]->m_Height, q->m_pSon[1]->m_pSon[1]->m_Height);
         }
+    }
 
-        q->m_pSon[1] = p;
-        p->m_pDad = q;
-        p->m_Factor = p->m_Factor + 1 - std::min(0, q->m_Factor);
-        q->m_Factor = q->m_Factor + 1 + std::max(0, p->m_Factor);
+    void RDI(Nodo<T> *&p)
+    {
+        Nodo<T> *q = p->m_pSon[1];
+        Nodo<T> *r = q->m_pSon[0];
+        p->m_pSon[1] = r->m_pSon[0];
+        q->m_pSon[0] = r->m_pSon[1];
+        r->m_pSon[0] = p;
+        r->m_pSon[1] = q;
+        switch (r->m_Factor)
+        {
+        case 0:
+            r->m_Factor = p->m_Factor = q->m_Factor = 0;
+            r->m_Height = 1;
+            p->m_Height = q->m_Height = 0;
+            break;
+        case 1:
+            r->m_Factor = 0;
+            r->m_Height = 2;
+            p->m_Factor = -1;
+            p->m_Height = 1;
+            q->m_Factor = 0;
+            q->m_Height = 1;
+            break;
+        case -1:
+            r->m_Factor = 0;
+            r->m_Height = 2;
+            p->m_Factor = 0;
+            p->m_Height = 1;
+            q->m_Factor = 1;
+            q->m_Height = 1;
+            break;
+        }
+        p = r;
+    }
+
+    void RID(Nodo<T> *&p)
+    {
+        Nodo<T> *q = p->m_pSon[0];
+        Nodo<T> *r = q->m_pSon[1];
+        p->m_pSon[0] = r->m_pSon[1];
+        q->m_pSon[1] = r->m_pSon[0];
+        r->m_pSon[1] = p;
+        r->m_pSon[0] = q;
+        switch (r->m_Factor)
+        {
+        case 0:
+            r->m_Factor = p->m_Factor = q->m_Factor = 0;
+            r->m_Height = 1;
+            p->m_Height = q->m_Height = 0;
+            break;
+        case -1:
+            p->m_Factor = 1;
+            p->m_Height = 1;
+            q->m_Factor = 0;
+            q->m_Height = 1;
+            r->m_Factor = 0;
+            r->m_Height = 2;
+            break;
+        case 1:
+            p->m_Factor = 0;
+            p->m_Factor = 1;
+            q->m_Factor = -1;
+            q->m_Height = 1;
+            r->m_Factor = 0;
+            r->m_Height = 2;
+            break;
+        }
+        p = r;
+    }
+
+    void InsertR(T d, Nodo<T> *&p)
+    {
+        if (!p)
+        {
+            p = new Nodo<T>(d);
+            return;
+        }
+        if (p->m_Dato == d)
+        {
+            return;
+        }
+        InsertR(d, p->m_pSon[p->m_Dato < d]);
+        if (p != m_pRoot)
+        {
+            if (p->m_pSon[0] && p->m_pSon[1])
+            {
+                if (p->m_pSon[p->m_Dato < d]->m_Factor != 0)
+                {
+                    p->m_Height = 1 + std::max(p->m_pSon[0]->m_Height, p->m_pSon[1]->m_Height);
+                }
+            }
+            if ((p->m_pSon[0] && !p->m_pSon[1]) || (p->m_pSon[1] && !p->m_pSon[0]))
+            {
+                p->m_Height += 1;
+            }
+        }
+        if (p->m_Dato < d)
+        {
+            p->m_Factor += 1;
+        }
+        else
+        {
+            p->m_Factor -= 1;
+        }
+        if (p->m_pSon[0] && p->m_pSon[1])
+        {
+            p->m_Factor = -p->m_pSon[0]->m_Height + p->m_pSon[1]->m_Height;
+        }
+        switch (p->m_Factor)
+        {
+        case 2:
+            if (p->m_pSon[1]->m_Factor == 1)
+            {
+                RDD(p);
+                break;
+            }
+            else
+            {
+                RDI(p);
+                break;
+            }
+        case -2:
+            if (p->m_pSon[0]->m_Factor == -1)
+            {
+                RII(p);
+                break;
+            }
+            else
+            {
+                RID(p);
+                break;
+            }
+        }
     }
 
     void Insert(T d)
     {
-        Nodo<T> *p_New = new Nodo<T>(d);
-        Nodo<T> *p = nullptr;
-        Nodo<T> *q = m_pRoot;
-
-        while (q != nullptr)
-        {
-            p = q;
-            if (p_New->m_Dato < q->m_Dato)
-            {
-                q = q->m_pSon[0];
-            }
-            else
-            {
-                q = q->m_pSon[1];
-            }
-        }
-
-        p_New->m_pDad = p;
-
-        if (p == nullptr)
-        {
-            m_pRoot = p_New;
-        }
-        else if (p_New->m_Dato < p->m_Dato)
-        {
-            p->m_pSon[0] = p_New;
-        }
-        else
-        {
-            p->m_pSon[1] = p_New;
-        }
-
-        updateBalance(p_New);
+        InsertR(d, m_pRoot);
     }
 
     void Add()
@@ -192,6 +218,29 @@ public:
         std::cout << "Ingrese el dato que desea agregar: ";
         std::cin >> d;
         Insert(d);
+    }
+
+    void Mostrar(Nodo<T> *p, int contador)
+    {
+        if (p == NULL)
+        {
+            return;
+        }
+        else
+        {
+            Mostrar(p->m_pSon[1], contador + 1);
+            for (int i = 0; i < contador; i++)
+            {
+                std::cout << "\t\t";
+            }
+            std::cout << p->m_Dato << ": " << p->m_Factor << std::endl;
+            Mostrar(p->m_pSon[0], contador + 1);
+        }
+    }
+
+    void Print()
+    {
+        Mostrar(m_pRoot, 0);
     }
 
     void VisualizerR(Nodo<T> *p, std::ofstream &g)
