@@ -1,12 +1,13 @@
 #include <iostream>
 #include <fstream>
+
 template <class T>
-class Nodo
+class NodoAB
 {
 public:
     T m_Dato;
-    Nodo<T> *m_pSon[2];
-    Nodo(T d)
+    NodoAB<T> *m_pSon[2];
+    NodoAB(T d)
     {
         m_Dato = d;
         m_pSon[0] = m_pSon[1] = 0;
@@ -15,8 +16,6 @@ public:
 template <class T>
 class Tree
 {
-private:
-    Nodo<T> *m_pRoot;
 
 public:
     Tree()
@@ -27,13 +26,13 @@ public:
     {
         if (!m_pRoot)
         {
-            m_pRoot = new Nodo<T>(d);
+            m_pRoot = new NodoAB<T>(d);
             return;
         }
         else
         {
-            Nodo<T> *p = m_pRoot;
-            Nodo<T> *q = p;
+            NodoAB<T> *p = m_pRoot;
+            NodoAB<T> *q = p;
             while (p)
             {
                 q = p;
@@ -41,20 +40,139 @@ public:
                     return;
                 p = p->m_pSon[p->m_Dato < d];
             }
-            Nodo<T> *&r = q->m_pSon[q->m_Dato < d];
-            r = new Nodo<T>(d);
+            NodoAB<T> *&r = q->m_pSon[q->m_Dato < d];
+            r = new NodoAB<T>(d);
         }
     }
 
-    void Add()
+    void Erase(T d)
     {
-        T d;
-        std::cout << "Ingrese el Valor a Ingresar: ";
-        std::cin >> d;
-        Add(d);
+        if (m_pRoot)
+        {
+            NodoAB<T> *p = m_pRoot;
+            NodoAB<T> *pErase;
+            while (p)
+            {
+                if (p->m_Dato == d)
+                {
+                    pErase = p;
+                }
+                p = p->m_pSon[p->m_Dato < d];
+            }
+            if (pErase != m_pRoot)
+            {
+                p = m_pRoot;
+                if (!pErase->m_pSon[1] && !pErase->m_pSon[0])
+                {
+                    while (p->m_pSon[p->m_Dato < d]->m_Dato != d)
+                    {
+                        p = p->m_pSon[p->m_Dato < d];
+                    }
+                    p->m_pSon[p->m_Dato < d] = pErase->m_pSon[0];
+                    delete pErase;
+                }
+                else if (!pErase->m_pSon[1])
+                {
+                    T aux = pErase->m_pSon[0]->m_Dato;
+                    Erase(aux);
+                    pErase->m_Dato = aux;
+                }
+                else if (!pErase->m_pSon[0])
+                {
+                    T aux = pErase->m_pSon[1]->m_Dato;
+                    Erase(aux);
+                    pErase->m_Dato = aux;
+                }
+                else if (pErase->m_pSon[1] && pErase->m_pSon[0])
+                {
+                    T Max = Mayor(pErase);
+                    Erase(Max);
+                    pErase->m_Dato = Max;
+                }
+            }
+            else
+            {
+                m_pRoot = nullptr;
+            }
+        }
     }
 
-    void VisualizerR(Nodo<T> *p, std::ofstream &g)
+    void Search(T d)
+    {
+        if (m_pRoot)
+        {
+            NodoAB<T> *p = m_pRoot;
+            NodoAB<T> *q;
+            while (p)
+            {
+                if (p->m_Dato == d)
+                {
+                    q = p;
+                }
+                p = p->m_pSon[p->m_Dato < d];
+            }
+            std::ofstream g;
+            g.open("TreeBinary.dot");
+            g << "digraph A{\n";
+            g << "\tRoot -> " << m_pRoot->m_Dato << ";\n";
+            g << "\tRoot [shape=Mdiamond, style = filled, color = gray];\n";
+            VisualizerR(m_pRoot, g);
+            g << "\t" << q->m_Dato << "[style = filled, color = yellow, fontcolor = black];\n";
+            g << "\tCurrent -> " << q->m_Dato << ";\n";
+            g << "\tCurrent [shape=Mdiamond, style = filled, color = yellow];\n";
+            g << "}" << std::endl;
+            g.close();
+        }
+    }
+
+    void Visualizer()
+    {
+        if (m_pRoot)
+        {
+            std::ofstream g;
+            g.open("TreeBinary.dot");
+            g << "digraph A{\n";
+            g << "\tRoot -> " << m_pRoot->m_Dato << ";\n";
+            g << "\tRoot [shape=Mdiamond, style = filled, color = gray];\n";
+            VisualizerR(m_pRoot, g);
+            g << "}";
+            g.close();
+        }
+        else
+        {
+            std::ofstream g;
+            g.open("TreeBinary.dot");
+            g << "digraph A{\n";
+            g << "\tRoot -> Null;\n";
+            g << "\tRoot [shape=Mdiamond, style = filled, color = gray];\n";
+            g << "\tNull [shape=Mdiamond, style = filled, color = gray];\n";
+            g << "}";
+        }
+    }
+
+private:
+    NodoAB<T> *m_pRoot;
+
+    T Mayor(NodoAB<T> *p)
+    {
+        NodoAB<T> *q = p->m_pSon[0];
+        NodoAB<T> *r;
+        if (q->m_pSon[1])
+        {
+            while (q->m_pSon[1])
+            {
+                r = q->m_pSon[1];
+                q = q->m_pSon[1];
+            }
+            return r->m_Dato;
+        }
+        else
+        {
+            return q->m_Dato;
+        }
+    }
+
+    void VisualizerR(NodoAB<T> *p, std::ofstream &g)
     {
         if (p != NULL)
         {
@@ -76,55 +194,4 @@ public:
             VisualizerR(p->m_pSon[1], g);
         }
     }
-
-    void Visualizer()
-    {
-        std::ofstream g;
-        g.open("TreeBinary.dot");
-        g << "digraph A{\n";
-        VisualizerR(m_pRoot, g);
-        g << "}";
-    }
 };
-
-void Menu()
-{
-    std::cout << "************************Arbol Binario************************\n";
-    std::cout << "1. Ingresar al Arbol\n";
-    std::cout << "2. Eliminar del Arbol)\n";
-    std::cout << "3. Mostrar el Arbol.\n";
-    std::cout << "4. Salir.\n";
-}
-int main()
-{
-    Tree<int> A;
-    int opc;
-    bool valid = true;
-    do
-    {
-        system("cls");
-        Menu();
-        std::cout << "Ingrese Opci" << char(162) << "n V" << char(160) << "lida: ";
-        std::cin >> opc;
-        switch (opc)
-        {
-        case 1:
-            A.Add();
-            break;
-        case 2:
-            std::cout << "Funcion no implementada.\n";
-            system("pause");
-            break;
-        case 3:
-            A.Visualizer();
-            system("dot TreeBinary.dot -o TreeBinary.png -Tpnwg");
-            system("C:\\Users\\Sebas-PC\\Desktop\\Clases_2022-II\\Algoritmos-y-Estructuras-de-Datos\\Visualizer\\ArbolBinario\\TreeBinary.png");
-            break;
-        case 4:
-            valid = false;
-            break;
-        default:
-            break;
-        }
-    } while (valid == true);
-}
