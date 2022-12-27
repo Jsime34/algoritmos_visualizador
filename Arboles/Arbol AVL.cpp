@@ -2,17 +2,17 @@
 #include <fstream>
 #include <algorithm>
 template <class T>
-class Nodo
+class NodoAVL
 {
 
 public:
     T m_Dato;
-    Nodo<T> *m_pSon[2];
+    NodoAVL<T> *m_pSon[2];
     int m_Height;
     int m_Factor;
 
 public:
-    Nodo(T d)
+    NodoAVL(T d)
     {
         m_Dato = d;
         m_pSon[0] = m_pSon[1] = 0;
@@ -25,22 +25,89 @@ template <class T>
 class Tree
 {
 
-private:
-    Nodo<T> *m_pRoot;
-
 public:
     Tree()
     {
         m_pRoot = nullptr;
     }
 
-    void RDD(Nodo<T> *&p)
+    void Insert(T d)
     {
-        Nodo<T> *q = p->m_pSon[1];
+        InsertR(d, m_pRoot);
+    }
+
+    void Erase(T d)
+    {
+        EraseR(d, m_pRoot, 0);
+    }
+
+    void Search(T d)
+    {
+        if (m_pRoot)
+        {
+            NodoAVL<T> *q = FindNodo(d);
+            std::ofstream g;
+            g.open("TreeAVL.dot");
+            g << "digraph A{\n";
+            VisualizerR(m_pRoot, g);
+            g << "\tCurrent -> " << q->m_Dato << ";\n";
+            g << "\tCurrent [shape=Mdiamond, style = filled, color = yellow];\n";
+            g << "}";
+            g.close();
+        }
+    }
+
+    void Visualizer()
+    {
+        if (m_pRoot)
+        {
+            std::ofstream g;
+            g.open("TreeAVL.dot");
+            g << "digraph A{\n";
+            g << "\tRoot -> " << m_pRoot->m_Dato << ";\n";
+            g << "\tRoot [shape=Mdiamond, style = filled, color = gray];\n";
+            g << "}";
+        }
+        else
+        {
+            std::ofstream g;
+            g.open("TreeAVL.dot");
+            g << "digraph A{\n";
+            g << "\tRoot -> Null;\n";
+            g << "\tRoot [shape=Mdiamond, style = filled, color = gray];\n";
+            g << "\tNull [shape=Mdiamond, style = filled, color = gray];\n";
+            VisualizerR(m_pRoot, g);
+            g << "}";
+        }
+    }
+
+private:
+    NodoAVL<T> *m_pRoot;
+
+    void RDD(NodoAVL<T> *&p)
+    {
+        NodoAVL<T> *q = p->m_pSon[1];
         p->m_pSon[1] = q->m_pSon[0];
         q->m_pSon[0] = p;
-        p->m_Factor = 0;
-        q->m_Factor = 0;
+        if (!p->m_pSon[1])
+        {
+            p->m_Factor = 0;
+            q->m_Factor = 0;
+        }
+        else
+        {
+            if (p->m_pSon[0])
+            {
+                p->m_Factor = -p->m_pSon[1]->m_Factor + p->m_pSon[0]->m_Factor;
+            }
+            else
+            {
+                p->m_Factor = p->m_pSon[1]->m_Factor + 1;
+            }
+            p->m_Height = p->m_pSon[1]->m_Height + 1;
+            q->m_Factor = -p->m_Height + q->m_pSon[1]->m_Height;
+            q->m_Height = 1 + std::max(p->m_Height, q->m_pSon[1]->m_Height);
+        }
         p = q;
         if (!q->m_pSon[0]->m_pSon[0] && !q->m_pSon[0]->m_pSon[1])
         {
@@ -49,17 +116,38 @@ public:
         }
         else
         {
-            q->m_pSon[0]->m_Height = 1 + std::max(q->m_pSon[0]->m_pSon[0]->m_Height, q->m_pSon[0]->m_pSon[1]->m_Height);
+            if (q->m_pSon[0]->m_pSon[0] && q->m_pSon[0]->m_pSon[1])
+            {
+                q->m_pSon[0]->m_Height = 1 + std::max(q->m_pSon[0]->m_pSon[0]->m_Height, q->m_pSon[0]->m_pSon[1]->m_Height);
+            }
         }
     }
 
-    void RII(Nodo<T> *&p)
+    void RII(NodoAVL<T> *&p)
     {
-        Nodo<T> *q = p->m_pSon[0];
+        NodoAVL<T> *q = p->m_pSon[0];
         p->m_pSon[0] = q->m_pSon[1];
         q->m_pSon[1] = p;
-        p->m_Factor = 0;
-        q->m_Factor = 0;
+        if (!p->m_pSon[0])
+        {
+            p->m_Factor = 0;
+            q->m_Factor = 0;
+        }
+        else
+        {
+            if (p->m_pSon[1])
+            {
+                p->m_Factor = -p->m_pSon[1]->m_Factor + p->m_pSon[0]->m_Factor;
+            }
+            else
+            {
+                p->m_Factor = p->m_pSon[0]->m_Factor + 1;
+            }
+            p->m_Factor = p->m_pSon[0]->m_Height + 1;
+            p->m_Height = p->m_pSon[0]->m_Height + 1;
+            q->m_Factor = -p->m_Height + q->m_pSon[0]->m_Height;
+            q->m_Height = 1 + std::max(p->m_Height, q->m_pSon[0]->m_Height);
+        }
         p = q;
         if (!q->m_pSon[1]->m_pSon[0] && !q->m_pSon[1]->m_pSon[1])
         {
@@ -68,14 +156,17 @@ public:
         }
         else
         {
-            q->m_pSon[1]->m_Height = 1 + std::max(q->m_pSon[1]->m_pSon[0]->m_Height, q->m_pSon[1]->m_pSon[1]->m_Height);
+            if (q->m_pSon[1]->m_pSon[0] && q->m_pSon[1]->m_pSon[1])
+            {
+                q->m_pSon[1]->m_Height = 1 + std::max(q->m_pSon[1]->m_pSon[0]->m_Height, q->m_pSon[1]->m_pSon[1]->m_Height);
+            }
         }
     }
 
-    void RDI(Nodo<T> *&p)
+    void RDI(NodoAVL<T> *&p)
     {
-        Nodo<T> *q = p->m_pSon[1];
-        Nodo<T> *r = q->m_pSon[0];
+        NodoAVL<T> *q = p->m_pSon[1];
+        NodoAVL<T> *r = q->m_pSon[0];
         p->m_pSon[1] = r->m_pSon[0];
         q->m_pSon[0] = r->m_pSon[1];
         r->m_pSon[0] = p;
@@ -107,10 +198,10 @@ public:
         p = r;
     }
 
-    void RID(Nodo<T> *&p)
+    void RID(NodoAVL<T> *&p)
     {
-        Nodo<T> *q = p->m_pSon[0];
-        Nodo<T> *r = q->m_pSon[1];
+        NodoAVL<T> *q = p->m_pSon[0];
+        NodoAVL<T> *r = q->m_pSon[1];
         p->m_pSon[0] = r->m_pSon[1];
         q->m_pSon[1] = r->m_pSon[0];
         r->m_pSon[1] = p;
@@ -132,7 +223,7 @@ public:
             break;
         case 1:
             p->m_Factor = 0;
-            p->m_Factor = 1;
+            p->m_Height = 1;
             q->m_Factor = -1;
             q->m_Height = 1;
             r->m_Factor = 0;
@@ -142,11 +233,11 @@ public:
         p = r;
     }
 
-    void InsertR(T d, Nodo<T> *&p)
+    void InsertR(T d, NodoAVL<T> *&p)
     {
         if (!p)
         {
-            p = new Nodo<T>(d);
+            p = new NodoAVL<T>(d);
             return;
         }
         if (p->m_Dato == d)
@@ -207,118 +298,169 @@ public:
         }
     }
 
-    void Insert(T d)
+    T Max(NodoAVL<T> *p)
     {
-        InsertR(d, m_pRoot);
-    }
-
-    void Add()
-    {
-        T d;
-        std::cout << "Ingrese el dato que desea agregar: ";
-        std::cin >> d;
-        Insert(d);
-    }
-
-    void Mostrar(Nodo<T> *p, int contador)
-    {
-        if (p == NULL)
+        NodoAVL<T> *q = p->m_pSon[0];
+        NodoAVL<T> *r;
+        if (q->m_pSon[1])
         {
-            return;
+            while (q->m_pSon[1])
+            {
+                r = q->m_pSon[1];
+                q = q->m_pSon[1];
+            }
+            return r->m_Dato;
         }
         else
         {
-            Mostrar(p->m_pSon[1], contador + 1);
-            for (int i = 0; i < contador; i++)
-            {
-                std::cout << "\t\t";
-            }
-            std::cout << p->m_Dato << ": " << p->m_Factor << std::endl;
-            Mostrar(p->m_pSon[0], contador + 1);
+            return q->m_Dato;
         }
     }
 
-    void Print()
+    void EraseR(T d, NodoAVL<T> *&p, NodoAVL<T> *Padre)
     {
-        Mostrar(m_pRoot, 0);
+        if (!p)
+        {
+            return;
+        }
+        if (p->m_Dato != d && (p->m_pSon[1] || p->m_pSon[0]))
+        {
+            EraseR(d, p->m_pSon[p->m_Dato < d], p);
+        }
+        if (p->m_Dato == d)
+        {
+            if (!p->m_pSon[0] && !p->m_pSon[1])
+            {
+                if (Padre)
+                {
+                    Padre->m_pSon[Padre->m_Dato < p->m_Dato] = p->m_pSon[1];
+                }
+                if (p->m_Dato == m_pRoot->m_Dato)
+                {
+                    m_pRoot = nullptr;
+                }
+                else
+                {
+                    delete p;
+                }
+            }
+            else if (!p->m_pSon[0])
+            {
+                T aux = p->m_pSon[1]->m_Dato;
+                Erase(aux);
+                p->m_Dato = aux;
+            }
+            else if (!p->m_pSon[1])
+            {
+                T aux = p->m_pSon[0]->m_Dato;
+                Erase(aux);
+                p->m_Dato = aux;
+            }
+            else if (p->m_pSon[1] && p->m_pSon[0])
+            {
+                T Mayor = Max(p);
+                Erase(Mayor);
+                if (p->m_Dato == d)
+                {
+                    p->m_Dato = Mayor;
+                }
+                else if (p->m_pSon[0]->m_Dato == d)
+                {
+                    p->m_pSon[0]->m_Dato = Mayor;
+                }
+                else if (p->m_pSon[1]->m_Dato == d)
+                {
+                    p->m_pSon[1]->m_Dato = Mayor;
+                }
+            }
+            return;
+        }
+        if (p->m_pSon[0] && p->m_pSon[1])
+        {
+            p->m_Height = 1 + std::max(p->m_pSon[0]->m_Height, p->m_pSon[1]->m_Height);
+            p->m_Factor = -p->m_pSon[0]->m_Height + p->m_pSon[1]->m_Height;
+        }
+        if (!p->m_pSon[0] && !p->m_pSon[1])
+        {
+            p->m_Height -= 1;
+            if (p->m_Factor == 1)
+            {
+                p->m_Factor -= 1;
+            }
+            else if (p->m_Factor == -1)
+            {
+                p->m_Factor += 1;
+            }
+        }
+        if (p->m_pSon[1] && !p->m_pSon[0])
+        {
+            p->m_Factor += 1;
+        }
+        if (p->m_pSon[0] && !p->m_pSon[1])
+        {
+            p->m_Factor -= 1;
+        }
+        switch (p->m_Factor)
+        {
+        case 2:
+            if (!p->m_pSon[0])
+            {
+                RDD(p);
+                break;
+            }
+            else
+            {
+                RDI(p);
+                break;
+            }
+        case -2:
+            if (!p->m_pSon[1])
+            {
+                RII(p);
+                break;
+            }
+            else
+            {
+                RID(p);
+                break;
+            }
+        }
     }
 
-    void VisualizerR(Nodo<T> *p, std::ofstream &g)
+    NodoAVL<T> *FindNodo(T d)
+    {
+        NodoAVL<T> *p = m_pRoot;
+        while (p)
+        {
+            if (p->m_Dato == d)
+            {
+                return p;
+            }
+            p = p->m_pSon[p->m_Dato < d];
+        }
+    }
+
+    void VisualizerR(NodoAVL<T> *p, std::ofstream &g)
     {
         if (p != NULL)
         {
             if (p == m_pRoot)
             {
-                g << "\t" << p->m_Dato << " [style = filled, color = gray];\n";
+                g << "\t" << p->m_Dato << " [style = filled, color = gray, label = \"" << p->m_Dato << "|" << p->m_Factor << "\"];\n";
             }
             if (p->m_pSon[0] != NULL)
             {
                 g << "\t" << p->m_Dato << " -> " << p->m_pSon[0]->m_Dato << ";\n";
-                g << "\t" << p->m_pSon[0]->m_Dato << " [style = filled, color = gray];\n";
+                g << "\t" << p->m_pSon[0]->m_Dato << " [style = filled, color = gray, label = \"" << p->m_pSon[0]->m_Dato << "|" << p->m_pSon[0]->m_Factor << "\"];\n";
             }
             if (p->m_pSon[1] != NULL)
             {
                 g << "\t" << p->m_Dato << " -> " << p->m_pSon[1]->m_Dato << ";\n";
-                g << "\t" << p->m_pSon[1]->m_Dato << " [style = filled, color = gray];\n";
+                g << "\t" << p->m_pSon[1]->m_Dato << " [style = filled, color = gray, label = \"" << p->m_pSon[1]->m_Dato << "|" << p->m_pSon[1]->m_Factor << "\"];\n";
             }
 
             VisualizerR(p->m_pSon[0], g);
             VisualizerR(p->m_pSon[1], g);
         }
     }
-
-    void Visualizer()
-    {
-        std::ofstream g;
-        g.open("TreeAVL.dot");
-        g << "digraph A{\n";
-        g << "\tRoot -> " << m_pRoot->m_Dato << ";\n";
-        g << "\tRoot [shape=Mdiamond, style = filled, color = gray];\n";
-        VisualizerR(m_pRoot, g);
-        g << "}";
-    }
 };
-
-void Menu()
-{
-    std::cout << "************************Arbol AVL************************\n";
-    std::cout << "1. Ingresar al Arbol\n";
-    std::cout << "2. Eliminar del Arbol\n";
-    std::cout << "3. Mostrar el Arbol.\n";
-    std::cout << "4. Salir.\n";
-}
-
-int main()
-{
-    Tree<int> A;
-    int opc;
-    bool valid = true;
-    do
-    {
-        system("cls");
-        Menu();
-        std::cout << "Ingrese Opci" << char(162) << "n V" << char(160) << "lida: ";
-        std::cin >> opc;
-        switch (opc)
-        {
-        case 1:
-            A.Add();
-            break;
-        case 2:
-            std::cout << "Funcion no implementada.\n";
-            system("pause");
-            break;
-        case 3:
-            A.Visualizer();
-            system("dot TreeAVL.dot -o TreeAVL.png -Tpng");
-            system("C:\\Users\\Sebas-PC\\Desktop\\Clases_2022-II\\Algoritmos-y-Estructuras-de-Datos\\Visualizer\\ArbolAVL\\TreeAVL.png");
-            break;
-        case 4:
-            valid = false;
-            break;
-        default:
-            std::cout << "Opci" << char(162) << "n no V" << char(160) << "lida. ";
-            break;
-        }
-    } while (valid == true);
-}
