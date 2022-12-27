@@ -1,14 +1,14 @@
 #include <iostream>
 #include <fstream>
 template <class T>
-class Nodo
+class NodoRB
 {
 public:
     T m_Dato;
-    Nodo<T> *m_pSon[2];
-    Nodo<T> *m_pDad;
+    NodoRB<T> *m_pSon[2];
+    NodoRB<T> *m_pDad;
     bool m_Color;
-    Nodo(T d)
+    NodoRB(T d)
     {
         m_Dato = d;
         m_pSon[0] = m_pSon[1] = 0;
@@ -16,26 +16,86 @@ public:
         m_pDad = 0;
     }
 };
+
 template <class T>
-class Tree
+class TreeRB
 {
-private:
-    Nodo<T> *m_pRoot;
 
 public:
-    Tree()
+    TreeRB()
     {
         m_pRoot = nullptr;
     }
 
-    Nodo<T> *Padre(Nodo<T> *p)
+    void Add(T d)
+    {
+
+        if (!m_pRoot)
+        {
+            m_pRoot = new NodoRB<T>(d);
+            Caso01(m_pRoot);
+            return;
+        }
+        else
+        {
+            NodoRB<T> *p = m_pRoot;
+            NodoRB<T> *q = p;
+            while (p)
+            {
+                q = p;
+                if (p->m_Dato == d)
+                    return;
+                p = p->m_pSon[p->m_Dato < d];
+            }
+            NodoRB<T> *&r = q->m_pSon[q->m_Dato < d];
+            r = new NodoRB<T>(d);
+            r->m_pDad = Padre(r);
+            Caso01(r);
+        }
+    }
+
+    bool Erase(T d)
+    {
+        return Erase_R(d, m_pRoot);
+    }
+
+    void Search(T d)
+    {
+        if (m_pRoot)
+        {
+            NodoRB<T> *q = FindNodo(d);
+            std::ofstream g;
+            g.open("TreeRB.dot");
+            g << "digraph A{\n";
+            VisualizerR(m_pRoot, g);
+            g << "\tCurrent -> " << q->m_Dato << ";\n";
+            g << "\tCurrent [shape=Mdiamond, style = filled, color = yellow];\n";
+            g << "}";
+            g.close();
+        }
+    }
+
+    void Visualizer()
+    {
+        std::ofstream g;
+        g.open("TreeRB.dot");
+        g << "digraph A{\n";
+        VisualizerR(m_pRoot, g);
+        g << "}";
+        g.close();
+    }
+
+private:
+    NodoRB<T> *m_pRoot;
+
+    NodoRB<T> *Padre(NodoRB<T> *p)
     {
         if (p == m_pRoot)
         {
             return 0;
         }
         T d = p->m_Dato;
-        Nodo<T> *q = m_pRoot;
+        NodoRB<T> *q = m_pRoot;
         while (q->m_pSon[q->m_Dato < d]->m_Dato != p->m_Dato)
         {
             q = q->m_pSon[q->m_Dato < d];
@@ -43,13 +103,13 @@ public:
         return q;
     }
 
-    Nodo<T> *Tio(Nodo<T> *q)
+    NodoRB<T> *Tio(NodoRB<T> *q)
     {
         if (!q)
         {
             return 0;
         }
-        Nodo<T> *p = Abuelo(q);
+        NodoRB<T> *p = Abuelo(q);
         if (p->m_Dato < q->m_Dato)
         {
             return p->m_pSon[0];
@@ -60,20 +120,32 @@ public:
         }
     }
 
-    Nodo<T> *Abuelo(Nodo<T> *p)
+    NodoRB<T> *Abuelo(NodoRB<T> *p)
     {
         if (p->m_pDad == m_pRoot)
         {
             return 0;
         }
-        Nodo<T> *q = p->m_pDad;
-        Nodo<T> *r = q->m_pDad;
+        NodoRB<T> *q = p->m_pDad;
+        NodoRB<T> *r = q->m_pDad;
         return r;
     }
 
-    void RI(Nodo<T> *&p)
+    NodoRB<T> *Hermano(NodoRB<T> *p)
     {
-        Nodo<T> *q = p->m_pSon[1];
+        if (p == p->m_pDad->m_pSon[0])
+        {
+            return p->m_pDad->m_pSon[1];
+        }
+        else
+        {
+            return p->m_pDad->m_pSon[0];
+        }
+    }
+
+    void RI(NodoRB<T> *&p)
+    {
+        NodoRB<T> *q = p->m_pSon[1];
         p->m_pSon[1] = q->m_pSon[0];
         if (q->m_pSon[0] != NULL)
         {
@@ -96,9 +168,9 @@ public:
         p->m_pDad = q;
     }
 
-    void RD(Nodo<T> *&p)
+    void RD(NodoRB<T> *&p)
     {
-        Nodo<T> *q = p->m_pSon[0];
+        NodoRB<T> *q = p->m_pSon[0];
         p->m_pSon[0] = q->m_pSon[1];
         if (q->m_pSon[1] != NULL)
         {
@@ -121,7 +193,7 @@ public:
         p->m_pDad = q;
     }
 
-    void Caso01(Nodo<T> *&p)
+    void Caso01(NodoRB<T> *&p)
     {
         if (p->m_pDad == 0)
         {
@@ -133,7 +205,7 @@ public:
         }
     }
 
-    void Caso02(Nodo<T> *&p)
+    void Caso02(NodoRB<T> *&p)
     {
         if (p->m_pDad->m_Color == 1)
         {
@@ -145,9 +217,9 @@ public:
         }
     }
 
-    void Caso03(Nodo<T> *&p)
+    void Caso03(NodoRB<T> *&p)
     {
-        Nodo<T> *tio = Tio(p), *a;
+        NodoRB<T> *tio = Tio(p), *a;
         if ((tio != nullptr) && (tio->m_Color == 0))
         {
             p->m_pDad->m_Color = 1;
@@ -162,10 +234,10 @@ public:
         }
     }
 
-    void Caso04(Nodo<T> *&p)
+    void Caso04(NodoRB<T> *&p)
     {
-        Nodo<T> *q = Abuelo(p);
-        Nodo<T> *r = p->m_pDad;
+        NodoRB<T> *q = Abuelo(p);
+        NodoRB<T> *r = p->m_pDad;
         if ((p == p->m_pDad->m_pSon[1]) && (p->m_pDad == q->m_pSon[0]))
         {
             RI(r);
@@ -179,9 +251,9 @@ public:
         Caso05(p);
     }
 
-    void Caso05(Nodo<T> *&p)
+    void Caso05(NodoRB<T> *&p)
     {
-        Nodo<T> *q = Abuelo(p);
+        NodoRB<T> *q = Abuelo(p);
         p->m_pDad->m_Color = 1;
         q->m_Color = 0;
         if ((p == p->m_pDad->m_pSon[0]) && (p->m_pDad == q->m_pSon[0]))
@@ -202,42 +274,197 @@ public:
         }
     }
 
-    void Add(T d)
+    NodoRB<T> *Min(NodoRB<T> *&p)
     {
-
-        if (!m_pRoot)
+        if (!p->m_pSon[0])
         {
-            m_pRoot = new Nodo<T>(d);
-            Caso01(m_pRoot);
-            return;
+            return p;
+        }
+        return Min(p->m_pSon[0]);
+    }
+
+    bool Erase_R(T d, NodoRB<T> *&p)
+    {
+        if (p->m_Dato > d)
+        {
+            if (!p->m_pSon[0])
+            {
+                return false;
+            }
+            Erase_R(d, p->m_pSon[0]);
+        }
+        else if (p->m_Dato < d)
+        {
+            if (!p->m_pSon[1])
+            {
+                return false;
+            }
+            Erase_R(d, p->m_pSon[1]);
+        }
+        else if (p->m_Dato == d)
+        {
+            if (p->m_pSon[1] == nullptr)
+            {
+                Delete(p);
+                return true;
+            }
+            NodoRB<T> *Small = Min(p->m_pSon[1]);
+            std::swap(p->m_Dato, Small->m_Dato);
+            Delete(Small);
+            return true;
         }
         else
         {
-            Nodo<T> *p = m_pRoot;
-            Nodo<T> *q = p;
-            while (p)
-            {
-                q = p;
-                if (p->m_Dato == d)
-                    return;
-                p = p->m_pSon[p->m_Dato < d];
-            }
-            Nodo<T> *&r = q->m_pSon[q->m_Dato < d];
-            r = new Nodo<T>(d);
-            r->m_pDad = Padre(r);
-            Caso01(r);
+            return false;
         }
     }
 
-    void Add()
+    void Delete(NodoRB<T> *&p)
     {
-        T d;
-        std::cout << "Ingrese el Valor a Ingresar: ";
-        std::cin >> d;
-        Add(d);
+        NodoRB<T> *Hijo;
+        if (!p->m_pSon[0])
+        {
+            Hijo = p->m_pSon[0];
+        }
+        else
+        {
+            Hijo = p->m_pSon[1];
+        }
+        if (Hijo != NULL)
+        {
+            if (!p->m_pDad && !p->m_pSon[0] && !p->m_pSon[1])
+            {
+                p = NULL;
+                m_pRoot = p;
+                return;
+            }
+            if (!p->m_pDad)
+            {
+                delete p;
+                Hijo->m_pDad = NULL;
+                m_pRoot = Hijo;
+                m_pRoot->m_Color = 1;
+                return;
+            }
+            if (p->m_pDad->m_pSon[0] == p)
+            {
+                p->m_pDad->m_pSon[0] = Hijo;
+            }
+            else
+            {
+                p->m_pDad->m_pSon[1] = Hijo;
+            }
+            Hijo->m_pDad = p->m_pDad;
+            if (p->m_Color == 1)
+            {
+                if (Hijo->m_Color == 0)
+                {
+                    Hijo->m_Color = 1;
+                }
+                else
+                {
+                    DCaso01(Hijo);
+                }
+            }
+        }
+        p->m_pDad->m_pSon[p->m_pDad->m_Dato < p->m_Dato] = p->m_pSon[1];
+        delete p;
     }
 
-    void VisualizerR(Nodo<T> *p, std::ofstream &g)
+    void DCaso01(NodoRB<T> *&p)
+    {
+        if (p->m_pDad != NULL)
+        {
+            DCaso02(p);
+        }
+    }
+
+    void DCaso02(NodoRB<T> *&p)
+    {
+        NodoRB<T> *q = Hermano(p);
+        if (q->m_Color == 0)
+        {
+            p->m_pDad->m_Color = 0;
+            q->m_Color = 1;
+            if (p == p->m_pDad->m_pSon[0])
+            {
+                NodoRB<T> *r = p->m_pDad;
+                RI(r);
+            }
+            else
+            {
+                NodoRB<T> *r = p->m_pDad;
+                RD(r);
+            }
+        }
+        DCaso03(p);
+    }
+
+    void DCaso03(NodoRB<T> *&p)
+    {
+        NodoRB<T> *q = Hermano(p);
+        if ((p->m_pDad->m_Color == 1) && (q->m_Color == 1) && (q->m_pSon[0]->m_Color == 1) && (q->m_pSon[1]->m_Color == 1))
+        {
+            q->m_Color = 0;
+            NodoRB<T> *r = p->m_pDad;
+            DCaso01(r);
+        }
+        else
+        {
+            DCaso04(p);
+        }
+    }
+
+    void DCaso04(NodoRB<T> *&p)
+    {
+        NodoRB<T> *q = Hermano(p);
+        if ((p->m_pDad->m_Color == 0) && (q->m_Color == 1) && (q->m_pSon[0]->m_Color == 1) && (q->m_pSon[1]->m_Color == 1))
+        {
+            q->m_Color = 0;
+            p->m_pDad->m_Color = 1;
+        }
+        else
+        {
+            DCaso05(p);
+        }
+    }
+
+    void DCaso05(NodoRB<T> *&p)
+    {
+        NodoRB<T> *q = Hermano(p);
+        if ((p == p->m_pDad->m_pSon[0]) && (q->m_Color == 1) && (q->m_pSon[0]->m_Color == 0) && (q->m_pSon[1]->m_Color == 1))
+        {
+            q->m_Color = 1;
+            q->m_pSon[0]->m_Color = 1;
+            RD(q);
+        }
+        else if ((p == p->m_pDad->m_pSon[1]) && (q->m_Color == 1) && (q->m_pSon[1]->m_Color == 0) && (q->m_pSon[0]->m_Color == 1))
+        {
+            q->m_Color = 1;
+            q->m_pSon[1]->m_Color = 1;
+            RI(q);
+        }
+        DCaso06(p);
+    }
+
+    void DCaso06(NodoRB<T> *&p)
+    {
+        NodoRB<T> *q = Hermano(p);
+        q->m_Color = p->m_pDad->m_Color;
+        p->m_pDad->m_Color = 1;
+        if (p == p->m_pDad->m_pSon[0])
+        {
+            q->m_pSon[1]->m_Color = 1;
+            RI(q);
+        }
+        else
+        {
+            q->m_pSon[0]->m_Color = 1;
+            RD(q);
+        }
+    }
+
+    void VisualizerR(NodoRB<T> *p, std::ofstream &g)
     {
         if (p != NULL)
         {
@@ -273,56 +500,4 @@ public:
             VisualizerR(p->m_pSon[1], g);
         }
     }
-
-    void Visualizer()
-    {
-        std::ofstream g;
-        g.open("TreeRB.dot");
-        g << "digraph A{\n";
-        VisualizerR(m_pRoot, g);
-        g << "}";
-    }
 };
-
-void Menu()
-{
-    std::cout << "************************Arbol Red/Black************************\n";
-    std::cout << "1. Ingresar al Arbol\n";
-    std::cout << "2. Eliminar del Arbol\n";
-    std::cout << "3. Mostrar el Arbol.\n";
-    std::cout << "4. Salir.\n";
-}
-int main()
-{
-    Tree<int> A;
-    int opc;
-    bool valid = true;
-    do
-    {
-        system("cls");
-        Menu();
-        std::cout << "Ingrese Opci" << char(162) << "n V" << char(160) << "lida: ";
-        std::cin >> opc;
-        switch (opc)
-        {
-        case 1:
-            A.Add();
-            break;
-        case 2:
-            std::cout << "Funcion no implementada.\n";
-            system("pause");
-            break;
-        case 3:
-            A.Visualizer();
-            system("dot TreeRB.dot -o TreeRB.png -Tpng");
-            system("C:\\Users\\Sebas-PC\\Desktop\\Clases_2022-II\\Algoritmos-y-Estructuras-de-Datos\\Visualizer\\ArbolRedBlack\\TreeRB.png");
-            break;
-        case 4:
-            valid = false;
-            break;
-        default:
-            std::cout << "Opci" << char(162) << "n no V" << char(160) << "lida. ";
-            break;
-        }
-    } while (valid == true);
-}
